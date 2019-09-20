@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace JsonModels2Skin3D.model {
-    class Skin3dModelXml {
+    public class Skin3dModelXml {
 
 
         // 注意: 生成的代码可能至少需要 .NET Framework 4.5 或 .NET Core/Standard 2.0。
