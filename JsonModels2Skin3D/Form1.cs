@@ -69,7 +69,6 @@ namespace JsonModels2Skin3D
                 {
                     McGeometryJson personlist = JsonConvert.DeserializeObject<McGeometryJson>(jobj.GetValue(key).ToString());
 
-
                     //Skin3DXml init
                     List<Skin3dModelXml.TechneModelsModelGeometryFolderShape> shapelist = new List<Skin3dModelXml.TechneModelsModelGeometryFolderShape>();
 
@@ -92,12 +91,25 @@ namespace JsonModels2Skin3D
 
                             foreach (Cube cube in bone.cubes)
                             {
-                                //修复坐标Y反转
-                                cube.origin[1] = ((cube.origin[1] + (cube.size[1] / 2)) * -1) - (cube.size[1] / 2);
-                                //防止旋转为空
+                                //验证旋转值，防止null
                                 float[] rotation = bone.rotation == null ? new float[] { 0, 0, 0 } : bone.rotation;
 
 
+                                //计算BB中旋转后的坐标 
+                                //x0 = (x - rx0)*cos(a) - (y - ry0)*sin(a) + rx0
+                                //y0 = (x - rx0)*sin(a) + (y - ry0)*cos(a) + ry0 
+
+                                //y (x,z) 
+                                var r = 7;
+                                var x_0 = (cube.origin[0] - bone.pivot[0]) * Math.Cos(rotation[1] * Math.PI / 180) - (cube.origin[2] - bone.pivot[2]) * Math.Sin(rotation[1] * Math.PI / 180) + bone.pivot[0];
+                                var z_0 = (cube.origin[0] - bone.pivot[0]) * Math.Sin(rotation[1] * Math.PI / 180) + (cube.origin[2] - bone.pivot[2]) * Math.Cos(rotation[1] * Math.PI / 180) + bone.pivot[2];
+                                Console.WriteLine(String.Format("原点:[{0},{1},{2}]  点1:[{3},{4},{5}]", bone.pivot[0], bone.pivot[1], bone.pivot[2], cube.origin[0], cube.origin[1], cube.origin[2]));
+                                Console.WriteLine(String.Format("x_0:{0}  z_0:{1}", x_0, z_0));
+
+                                //修复坐标Y反转
+                                cube.origin[1] = ((cube.origin[1] + (cube.size[1] / 2)) * -1) - (cube.size[1] / 2);
+
+                                //构造Shape
                                 Skin3dModelXml.TechneModelsModelGeometryFolderShape tempShape = new Skin3dModelXml.TechneModelsModelGeometryFolderShape();
                                 tempShape.Type = "d9e621f7-957f-4b77-b1ae-20dcd0da7751";
                                 tempShape.Name = bone.name + "-" + Guid.NewGuid().ToString("N");    //去重
@@ -105,10 +117,10 @@ namespace JsonModels2Skin3D
                                 tempShape.IsFixed = "False";
                                 tempShape.IsMirrored = "" + (bone.mirror || cube.mirror);
                                 tempShape.IsSolid = "False";
-                                tempShape.Offset = string.Join(",", cube.origin);
-                                tempShape.Position = String.Format("0,0,0");
+                                tempShape.Offset = "0,0,0";
+                                tempShape.Position = string.Join(",", cube.origin);
 
-                                // 继承父级旋转
+                                //继承父级旋转
                                 if (bone.parent != null)
                                 {
                                     foreach (Bone findParentBone in personlist.bones)
@@ -140,8 +152,6 @@ namespace JsonModels2Skin3D
                                 tempShape.Part = "Chest";
                                 tempShape.Hidden = "False";
                                 tempShape.IsArmor = "False";
-
-
 
                                 shapelist.Add(tempShape);
                             }
