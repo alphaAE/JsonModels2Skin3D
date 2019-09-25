@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using JsonModels2Skin3D.model;
@@ -19,11 +20,10 @@ namespace JsonModels2Skin3D
     public partial class JsonModels2Skin3D : Form
     {
         public string authorText = "alphaAE";
-        public string versionText = "v0.0.1";
+        public string versionText = "v0.0.2";
         public string descriptionText = "选择基岩版Json实体模型，将在同一文件夹内生成Xml格式的Skin3D模型文件\n\n" +
             "注意事项：\n" +
-            "\t目前仅支持低于1.12老版本Json实体模型文件\n" +
-            "\t由于Skin3D模型定义旋转原点失效，建模过程中若用到旋转请将原点放在[0,0,0]\n";
+            "\t目前仅支持低于1.12老版本Json实体模型文件\n";
 
         public JsonModels2Skin3D()
         {
@@ -44,9 +44,24 @@ namespace JsonModels2Skin3D
             fileDialog.Filter = "所有文件(*.json)|*.json";
             if (fileDialog.ShowDialog() == DialogResult.OK)
             {
+                this.selectFileBtn.Enabled = false;
+                this.selectFileBtn.Text = "处理中...";
                 string file = fileDialog.FileName;
                 ToSkin3DFile(file);
+
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    Thread.Sleep(400);
+                    selectFileBtn.BeginInvoke(new Action(() =>
+                    {
+                        this.selectFileBtn.Enabled = true;
+                        this.selectFileBtn.Text = "选择文件";
+                    }));
+                });
+
+                
             }
+
         }
 
         private Boolean ToSkin3DFile(string file)
@@ -96,17 +111,6 @@ namespace JsonModels2Skin3D
 
                                 Console.WriteLine(String.Format("原点:[{0},{1},{2}]  点1:[{3},{4},{5}]", bone.pivot[0], bone.pivot[1], bone.pivot[2], cube.origin[0], cube.origin[1], cube.origin[2]));
 
-                                //计算BB中旋转后的坐标 
-                                //x0 = (x - rx0)*cos(a) - (y - ry0)*sin(a) + rx0
-                                //y0 = (x - rx0)*sin(a) + (y - ry0)*cos(a) + ry0 
-
-                                //y (x,z) 
-                                var r = 7;
-                                var x_0 = (cube.origin[0] - bone.pivot[0]) * Math.Cos(rotation[1] * Math.PI / 180) - (cube.origin[2] - bone.pivot[2]) * Math.Sin(rotation[1] * Math.PI / 180) + bone.pivot[0];
-                                var z_0 = (cube.origin[0] - bone.pivot[0]) * Math.Sin(rotation[1] * Math.PI / 180) + (cube.origin[2] - bone.pivot[2]) * Math.Cos(rotation[1] * Math.PI / 180) + bone.pivot[2];
-                               
-                                Console.WriteLine(String.Format("x_0:{0}  z_0:{1}", x_0, z_0));
-
                                 //修复坐标Y反转
                                 cube.origin[1] = ((cube.origin[1] + (cube.size[1] / 2)) * -1) - (cube.size[1] / 2);
 
@@ -118,8 +122,14 @@ namespace JsonModels2Skin3D
                                 tempShape.IsFixed = "False";
                                 tempShape.IsMirrored = "" + (bone.mirror || cube.mirror);
                                 tempShape.IsSolid = "False";
-                                tempShape.Offset = string.Join(",", bone.pivot);
-                                tempShape.Position = string.Join(",", cube.origin);
+
+                                //BB中实际坐标不受原点影响 Skin3D中受，此处进行补正
+                                for (int index = 0; index < cube.origin.Length; index++)
+                                {
+                                    cube.origin[index] -= bone.pivot[index];
+                                }
+                                tempShape.Offset = string.Join(",", cube.origin);
+                                tempShape.Position = string.Join(",", bone.pivot);
 
                                 //继承父级旋转
                                 if (bone.parent != null)
@@ -171,8 +181,6 @@ namespace JsonModels2Skin3D
                     string xmlString = XmlSerializeUtil.Serializer(typeof(Skin3dModelXml.Techne), xmlObject);
                     Utils.SaveString2File(new FileInfo(file).DirectoryName + "/" + key + ".xml", xmlString);
 
-                    //仅测试一个即退出
-                    //break;
                 }
                 catch (Exception e)
                 {
@@ -181,6 +189,7 @@ namespace JsonModels2Skin3D
                     return false;
                 }
             }
+
             MessageBox.Show("成功处理下列实体：\n\n" + string.Join("\n", modelList.ToArray()), "处理完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return true;
         }

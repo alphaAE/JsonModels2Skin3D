@@ -23,6 +23,7 @@
         /// 使用代码编辑器修改此方法的内容。
         /// </summary>
         private void InitializeComponent() {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(JsonModels2Skin3D));
             this.selectFileBtn = new System.Windows.Forms.Button();
             this.Versionlabel = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -81,6 +82,7 @@
             this.Controls.Add(this.Versionlabel);
             this.Controls.Add(this.selectFileBtn);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "JsonModels2Skin3D";
             this.Text = "JsonModels2Skin3D";
