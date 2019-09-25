@@ -94,6 +94,7 @@ namespace JsonModels2Skin3D
                                 //验证旋转值，防止null
                                 float[] rotation = bone.rotation == null ? new float[] { 0, 0, 0 } : bone.rotation;
 
+                                Console.WriteLine(String.Format("原点:[{0},{1},{2}]  点1:[{3},{4},{5}]", bone.pivot[0], bone.pivot[1], bone.pivot[2], cube.origin[0], cube.origin[1], cube.origin[2]));
 
                                 //计算BB中旋转后的坐标 
                                 //x0 = (x - rx0)*cos(a) - (y - ry0)*sin(a) + rx0
@@ -103,7 +104,7 @@ namespace JsonModels2Skin3D
                                 var r = 7;
                                 var x_0 = (cube.origin[0] - bone.pivot[0]) * Math.Cos(rotation[1] * Math.PI / 180) - (cube.origin[2] - bone.pivot[2]) * Math.Sin(rotation[1] * Math.PI / 180) + bone.pivot[0];
                                 var z_0 = (cube.origin[0] - bone.pivot[0]) * Math.Sin(rotation[1] * Math.PI / 180) + (cube.origin[2] - bone.pivot[2]) * Math.Cos(rotation[1] * Math.PI / 180) + bone.pivot[2];
-                                Console.WriteLine(String.Format("原点:[{0},{1},{2}]  点1:[{3},{4},{5}]", bone.pivot[0], bone.pivot[1], bone.pivot[2], cube.origin[0], cube.origin[1], cube.origin[2]));
+                               
                                 Console.WriteLine(String.Format("x_0:{0}  z_0:{1}", x_0, z_0));
 
                                 //修复坐标Y反转
@@ -117,7 +118,7 @@ namespace JsonModels2Skin3D
                                 tempShape.IsFixed = "False";
                                 tempShape.IsMirrored = "" + (bone.mirror || cube.mirror);
                                 tempShape.IsSolid = "False";
-                                tempShape.Offset = "0,0,0";
+                                tempShape.Offset = string.Join(",", bone.pivot);
                                 tempShape.Position = string.Join(",", cube.origin);
 
                                 //继承父级旋转
